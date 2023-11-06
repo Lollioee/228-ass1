@@ -1,0 +1,23 @@
+import AVFoundation
+
+// ...
+
+func playTone(_ colorName: String, completion: @escaping () -> Void) {
+    if let soundURL = Bundle.main.url(forResource: colorName, withExtension: "mp3") {
+        do {
+            let audioPlayer = try AVAudioPlayer(contentsOf: soundURL)
+            audioPlayer.prepareToPlay()
+            audioPlayer.play()
+            // 添加延迟以允许音频播放完成（根据需要进行调整）
+            DispatchQueue.main.asyncAfter(deadline: .now() + audioPlayer.duration) {
+                completion()
+            }
+        } catch {
+            print("播放声音时出错：\(error.localizedDescription)")
+            completion()
+        }
+    } else {
+        print("\(colorName).mp3 的声音文件未找到")
+        completion()
+    }
+}

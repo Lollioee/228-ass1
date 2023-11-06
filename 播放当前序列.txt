@@ -1,0 +1,55 @@
+// 播放当前序列
+func playSequence() {
+    // 在播放序列期间禁用用户交互
+    redButton.isEnabled = false
+    blueButton.isEnabled = false
+    greenButton.isEnabled = false
+    yellowButton.isEnabled = false
+    
+    // 创建一个DispatchGroup来处理异步播放
+    let playbackGroup = DispatchGroup()
+    
+    // 遍历颜色序列，逐渐增加音调数量
+    for tonesToPlay in 1...colorSequence.count {
+        playbackGroup.enter()
+        
+        // 播放音调
+        let tones = Array(colorSequence.prefix(tonesToPlay))
+        for tone in tones {
+            playTone(tone) {
+                // 音调播放完成后的操作（如果需要的话）
+            }
+        }
+        
+        // 在播放每个音调之间添加延迟（根据需要调整）
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            // 取消按钮的突出显示
+            unhighlightButtons()
+        }
+        
+        // 在这里等待用户输入并验证
+        while playerSequence.count < tonesToPlay {
+            // 使用计时器或类似机制来等待用户输入，等用户按下按钮。
+            // 当用户按下按钮时，将颜色名称添加到playerSequence中，然后验证。
+        }
+        
+        // 检查用户输入是否正确
+        let isCorrect = checkUserInput(forTones: tones)
+        
+        if !isCorrect {
+            // 如果输入不正确，结束游戏
+            gameOver()
+            return
+        }
+        
+        playbackGroup.leave()
+    }
+    
+    // 当所有音调都已播放和验证后，重新启用用户交互
+    playbackGroup.notify(queue: .main) {
+        redButton.isEnabled = true
+        blueButton.isEnabled = true
+        greenButton.isEnabled = true
+        yellowButton.isEnabled = true
+    }
+}

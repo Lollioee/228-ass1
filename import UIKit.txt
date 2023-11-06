@@ -1,0 +1,88 @@
+import UIKit
+
+class ViewController: UIViewController {
+    // 定义四个彩色按钮
+    @IBOutlet weak var redButton: UIButton!
+    @IBOutlet weak var blueButton: UIButton!
+    @IBOutlet weak var greenButton: UIButton!
+    @IBOutlet weak var yellowButton: UIButton!
+    
+    @IBOutlet weak var scoreLabel: UILabel!
+    
+    var colorSequence: [String] = [] // 存储生成的颜色序列
+    var playerSequence: [String] = [] // 存储玩家输入的序列
+    var score: Int = 0
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        generateNewSequence()
+    }
+    
+    // 生成新序列并播放它
+    func generateNewSequence() {
+        // 生成随机的颜色名称序列
+        colorSequence.removeAll()
+        for _ in 1...10 {
+            let randomColor = ["Red", "Blue", "Green", "Yellow"].randomElement()!
+            colorSequence.append(randomColor)
+        }
+        
+        // 播放序列
+        playSequence()
+    }
+    
+    // 播放当前序列
+    func playSequence() {
+        // 实现突出显示和播放颜色序列的逻辑
+        // 在播放序列后等待用户输入
+    }
+    
+    // 处理按钮点击
+    @IBAction func buttonPressed(_ sender: UIButton) {
+        let colorName = getColorNameFromButton(sender)
+        playerSequence.append(colorName)
+        
+        // 检查玩家的序列是否与颜色序列匹配
+        if playerSequence == colorSequence.prefix(playerSequence.count) {
+            // 继续播放或进入下一轮
+            if playerSequence.count == colorSequence.count {
+                // 玩家成功重复了序列
+                score += 1
+                scoreLabel.text = "分数：\(score)"
+                playerSequence.removeAll()
+                generateNewSequence()
+            }
+        } else {
+            // 玩家犯了一个错误
+            gameOver()
+        }
+    }
+    
+    // 处理游戏结束
+    func gameOver() {
+        // 显示最终分数并将其与日期一起存储在高分榜中
+        // 实现一个高分榜或将分数保存到UserDefaults中
+        
+        // 重置游戏
+        score = 0
+        scoreLabel.text = "分数：0"
+        playerSequence.removeAll()
+        generateNewSequence()
+    }
+    
+    // 从按钮获取颜色名称的实用函数
+    func getColorNameFromButton(_ button: UIButton) -> String {
+        switch button {
+        case redButton:
+            return "Red"
+        case blueButton:
+            return "Blue"
+        case greenButton:
+            return "Green"
+        case yellowButton:
+            return "Yellow"
+        default:
+            return ""
+        }
+    }
+}
