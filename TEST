@@ -30,7 +30,7 @@ class ViewController: UIViewController {
         let index = 0
         playToneInDelay(index: index, tonesToPlay: tonesToPlay)
 
-        Timer.scheduledTimer(withTimeInterval: 1.0 , repeats: true){ timer in
+        Timer.scheduledTimer(withTimeInterval: 1.0 , repeats: false){ timer in
             if tonesToPlay <= self.colorSequence.count{
                 self.playSequence(tonesToPlay: tonesToPlay + 1)
             } else{
