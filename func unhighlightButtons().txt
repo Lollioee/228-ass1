@@ -1,0 +1,18 @@
+func unhighlightButtons() {
+    // Reset all buttons to their default appearance
+    resetButton(redButton)
+    resetButton(blueButton)
+    resetButton(greenButton)
+    resetButton(yellowButton)
+}
+
+func resetButton(_ button: UIButton) {
+    // Reset the button's visual appearance to its default state
+    button.layer.borderWidth = 0.0 // Remove any border
+    button.layer.backgroundColor = nil // Remove the custom background color
+    
+    // You may need to reset other properties to fully unhighlight the button
+    // For example, if you changed the text color, image, or other attributes during highlighting, you should reset them here.
+    
+    // You can also stop any sounds or animations that were used for highlighting.
+}

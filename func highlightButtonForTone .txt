@@ -1,0 +1,25 @@
+func highlightButtonForTone(_ tone: String) {
+    // 确定给定音调对应哪个按钮并进行突出显示
+    switch tone {
+        case "Red":
+            highlightButton(redButton)
+        case "Blue":
+            highlightButton(blueButton)
+        case "Green":
+            highlightButton(greenButton)
+        case "Yellow":
+            highlightButton(yellowButton)
+        default:
+            break
+    }
+}
+
+func highlightButton(_ button: UIButton) {
+    // 添加视觉效果以突出显示按钮（您可以根据需要自定义）
+    button.layer.borderWidth = 2.0
+    button.layer.borderColor = UIColor.white.cgColor
+    button.layer.cornerRadius = 5.0
+    button.layer.backgroundColor = UIColor.red.cgColor // 更改为适当的颜色
+    
+    // 您还可以播放声音或执行其他操作以指示按钮已被突出显示
+}
