@@ -1,10 +1,3 @@
-//
-//  ViewController.swift
-//  test
-//
-//  Created by Chen, Gaopeng on 08/11/2023.
-//
-
 import UIKit
 import AVFoundation
 
@@ -24,20 +17,38 @@ class ViewController: UIViewController {
     func generateNewSequence() {
         // 生成随机的颜色名称序列
         colorSequence.removeAll()
-        for _ in 1...10 {
+        for _ in 1...3 {
             let randomColor = ["red", "blue", "green", "yellow"].randomElement()!
             colorSequence.append(randomColor)
         }
         // 播放序列
-        playSequence()
+        print(colorSequence)
+        playSequence(tonesToPlay: 1)
     }
     
-    func playSequence() {
-        
-        // Traverse the color sequence with gradually increasing tone counts
-                let tone = "blue"
-                playTone(tone)
+    func playSequence(tonesToPlay: Int) {
+        let index = 0
+        playToneInDelay(index: index, tonesToPlay: tonesToPlay)
 
+        Timer.scheduledTimer(withTimeInterval: 1.0 , repeats: true){ timer in
+            if tonesToPlay <= self.colorSequence.count{
+                self.playSequence(tonesToPlay: tonesToPlay + 1)
+            } else{
+                timer.invalidate()
+            }
+        }
+    }
+    
+    func playToneInDelay(index: Int, tonesToPlay: Int) {
+        
+        if index < tonesToPlay{
+            let tone = colorSequence[index]
+            playTone(tone)
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0){
+                self.playToneInDelay(index: index + 1, tonesToPlay: tonesToPlay)
+            }
+        }
     }
     
     func getAllMP3FileNameURLs() -> [String:URL] {
@@ -161,3 +172,5 @@ class ViewController: UIViewController {
 
 
 }
+
+
