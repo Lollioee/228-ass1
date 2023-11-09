@@ -1,0 +1,186 @@
+//
+//  ViewController.swift
+//  test
+//
+//  Created by Chen, Gaopeng on 08/11/2023.
+//
+
+import UIKit
+import AVFoundation
+
+class ViewController: UIViewController {
+
+    @IBOutlet weak var redButton: UIButton!
+    @IBOutlet weak var blueButton: UIButton!
+    @IBOutlet weak var greenButton: UIButton!
+    @IBOutlet weak var yellowButton: UIButton!
+    
+    var playerSequence: [String] = []
+    var colorSequence: [String] = [] // 存储生成的颜色序列
+    var audioClips = [String:URL]()
+    var audioPlayer: AVAudioPlayer?
+    
+    // 生成新序列并播放它
+    func generateNewSequence() {
+        // 生成随机的颜色名称序列
+        colorSequence.removeAll()
+        for _ in 1...4 {
+            let randomColor = ["red", "blue", "green", "yellow"].randomElement()!
+            colorSequence.append(randomColor)
+        }
+        // 播放序列
+        print(colorSequence)
+        playSequence(tonesToPlay: 1)
+    }
+    
+    func playSequence(tonesToPlay: Int) {
+        
+        let index = 0
+        if tonesToPlay <= self.colorSequence.count{
+        playToneInDelay(index: index, tonesToPlay: tonesToPlay)
+        
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(tonesToPlay) + 1.0){
+                self.playSequence(tonesToPlay: tonesToPlay + 1)
+            }
+        }
+    }
+    
+    func playToneInDelay(index: Int, tonesToPlay: Int) {
+        
+        if index < tonesToPlay{
+            let tone = colorSequence[index]
+            print(index, tonesToPlay)
+            playTone(tone)
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0){
+                self.playToneInDelay(index: index + 1, tonesToPlay: tonesToPlay)
+            }
+        }
+    }
+    
+    func getAllMP3FileNameURLs() -> [String:URL] {
+        var filePaths = [URL]() //URL array
+        var audioFileNames = [String]() //String array
+        var theResult = [String:URL]()
+
+        let bundlePath = Bundle.main.bundleURL
+        do {
+            try FileManager.default.createDirectory(atPath: bundlePath.relativePath, withIntermediateDirectories: true)
+            // Get the directory contents urls (including subfolders urls)
+            let directoryContents = try FileManager.default.contentsOfDirectory(at: bundlePath, includingPropertiesForKeys: nil, options: [])
+            
+            // filter the directory contents
+            filePaths = directoryContents.filter{ $0.pathExtension == "mp3" }
+            
+            //get the file names, without the extensions
+            audioFileNames = filePaths.map{ $0.deletingPathExtension().lastPathComponent }
+        } catch {
+            print(error.localizedDescription) //output the error
+        }
+        //print(audioFileNames) //for debugging purposes only
+        for loop in 0..<filePaths.count { //Build up the dictionary.
+            theResult[audioFileNames[loop]] = filePaths[loop]
+        }
+        return theResult
+    }
+    
+    func setupAudioPlayer(toPlay audioFileURL:URL) {
+        do {
+            try self.audioPlayer = AVAudioPlayer(contentsOf: audioFileURL)
+            audioPlayer?.prepareToPlay()
+        } catch {
+            print("Can't play the audio \(audioFileURL.absoluteString)")
+            print(error.localizedDescription)
+        }
+    }
+
+    func playTone(_ tone: String) {
+                if (self.audioPlayer == nil) || (self.audioPlayer?.isPlaying == false) {
+                    //select a random audio clip URL from those in the audioClips dictionary
+                    if let randomClipURL = audioClips[tone]{
+                        highlightButtonForTone(tone)
+                        setupAudioPlayer(toPlay: randomClipURL) //prepare it for playing
+                        self.audioPlayer?.play()
+                        Timer.scheduledTimer(withTimeInterval: audioPlayer!.duration, repeats: false) { _ in
+                            self.unhighlightButtonsForTone(tone)
+                        }
+                    }else{
+                        print("cannot find the URL")
+                    }
+                }
+    }
+    
+    func highlightButtonForTone(_ tone: String) {
+        // 确定给定音调对应哪个按钮并进行突出显示
+        switch tone {
+            case "red":
+                highlightButton(redButton)
+            case "blue":
+                highlightButton(blueButton)
+            case "green":
+                highlightButton(greenButton)
+            case "yellow":
+                highlightButton(yellowButton)
+            default:
+                break
+        }
+    }
+
+    func highlightButton(_ button: UIButton) {
+        // 添加视觉效果以突出显示按钮（您可以根据需要自定义）
+        button.layer.backgroundColor = UIColor.gray.cgColor // 更改为适当的颜色
+        // 您还可以播放声音或执行其他操作以指示按钮已被突出显示
+    }
+    
+    func unhighlightButtonsForTone(_ tone: String) {
+        // Reset all buttons to their default appearance
+        switch tone {
+            case "red":
+                redButton.layer.backgroundColor = UIColor.systemRed.cgColor
+            case "blue":
+                blueButton.layer.backgroundColor = UIColor.systemBlue.cgColor
+            case "green":
+                greenButton.layer.backgroundColor = UIColor.systemGreen.cgColor
+            case "yellow":
+                yellowButton.layer.backgroundColor = UIColor.systemYellow.cgColor
+            default:
+                break
+        }
+    }
+    
+    @IBAction func buttonPressed(_ sender: UIButton) {
+        let colorName = getColorNameFromButton(sender)
+        playerSequence.append(colorName)
+        highlightButtonForTone(colorName)
+    }
+    
+    @IBAction func buttonReleased(_ sender: UIButton) {
+        let colorName = getColorNameFromButton(sender)
+        unhighlightButtonsForTone(colorName)
+    }
+
+    func getColorNameFromButton(_ button: UIButton) -> String {
+        switch button {
+        case redButton:
+            return "red"
+        case blueButton:
+            return "blue"
+        case greenButton:
+            return "green"
+        case yellowButton:
+            return "yellow"
+        default:
+            return ""
+        }
+    }
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        audioClips = getAllMP3FileNameURLs()
+        generateNewSequence()
+        // Do any additional setup after loading the view.
+    }
+
+
+}
