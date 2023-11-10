@@ -1,0 +1,69 @@
+import UIKit
+
+class ViewController: UIViewController {
+    
+    @IBOutlet weak var countdownLabel: UILabel!
+    @IBOutlet weak var inputTextField: UITextField!
+    @IBOutlet weak var startButton: UIButton!
+    
+    var countdownTimer: Timer?
+    var secondsRemaining = 10
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        // 初始化界面
+        countdownLabel.text = "\(secondsRemaining) seconds remaining"
+        inputTextField.isEnabled = false
+    }
+    
+    @IBAction func startButtonTapped(_ sender: Any) {
+        // 用户点击开始按钮
+        startCountdown()
+    }
+    
+    func startCountdown() {
+        // 启动倒计时
+        countdownTimer = Timer.scheduledTimer(timeInterval: 1.0, target: self, selector: #selector(updateCountdown), userInfo: nil, repeats: true)
+        
+        // 启用文本字段，允许用户输入
+        inputTextField.isEnabled = true
+        
+        // 改变按钮状态，防止用户重复点击
+        startButton.isEnabled = false
+    }
+    
+    @objc func updateCountdown() {
+        // 更新倒计时标签
+        secondsRemaining -= 1
+        countdownLabel.text = "\(secondsRemaining) seconds remaining"
+        
+        // 检查是否倒计时结束
+        if secondsRemaining <= 0 {
+            endCountdown()
+        }
+    }
+    
+    func endCountdown() {
+        // 结束倒计时
+        countdownTimer?.invalidate()
+        
+        // 禁用文本字段，防止用户输入
+        inputTextField.isEnabled = false
+        
+        // 恢复按钮状态，允许用户重新开始
+        startButton.isEnabled = true
+        
+        // 在这里添加检查用户输入的逻辑，例如比较输入值与正确答案
+        let userEnteredText = inputTextField.text ?? ""
+        let correctAnswer = "your_correct_answer_here"
+        if userEnteredText == correctAnswer {
+            print("Correct!")
+        } else {
+            print("Incorrect!")
+        }
+        
+        // 重置倒计时秒数
+        secondsRemaining = 10
+        countdownLabel.text = "\(secondsRemaining) seconds remaining"
+    }
+}
