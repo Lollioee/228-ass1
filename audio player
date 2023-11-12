@@ -1,0 +1,84 @@
+import UIKit
+import AVFoundation
+
+
+class ViewController: UIViewController {
+    
+    var audioPlayer: AVAudioPlayer?
+    var audioClips = [String:URL]()
+    
+    
+    //MARK: - Storyboard outlets and actions
+    
+    @IBAction func playButton(_ sender: Any) {
+        if (self.audioPlayer == nil) || (self.audioPlayer?.isPlaying == false) {
+            //select a random audio clip URL from those in the audioClips dictionary
+            let (_,randomClipURL) = audioClips.randomElement()!
+            setupAudioPlayer(toPlay: randomClipURL) //prepare it for playing
+            self.audioPlayer?.play() //and play it
+        }
+    }
+    
+    @IBAction func stopButton(_ sender: Any) {
+        if self.audioPlayer?.isPlaying == true { //we can only stop it if it's still playing
+            self.audioPlayer?.stop()
+            self.audioPlayer = nil
+        }
+    }
+    
+    
+    //MARK: - audio functions
+    
+    func setupAudioPlayer(toPlay audioFileURL:URL) {
+        do {
+            try self.audioPlayer = AVAudioPlayer(contentsOf: audioFileURL)
+            audioPlayer?.prepareToPlay()
+        } catch {
+            print("Can't play the audio \(audioFileURL.absoluteString)")
+            print(error.localizedDescription)
+        }
+    }
+
+    //MARK: - file manager functions
+    /*
+     The following function retrieves URLs of all the files located in the App Bundle
+     It then filters that array of URLs to leave only MP3 files.
+     Finally, it retrieves the filenames (minus the .mp3 part) and uses those to contruct
+     a dictionary - the filename is the key, the URL of that file is the value
+     This dictionary is then returned from the function
+     */
+    func getAllMP3FileNameURLs() -> [String:URL] {
+        var filePaths = [URL]() //URL array
+        var audioFileNames = [String]() //String array
+        var theResult = [String:URL]()
+
+        let bundlePath = Bundle.main.bundleURL
+        do {
+            try FileManager.default.createDirectory(atPath: bundlePath.relativePath, withIntermediateDirectories: true)
+            // Get the directory contents urls (including subfolders urls)
+            let directoryContents = try FileManager.default.contentsOfDirectory(at: bundlePath, includingPropertiesForKeys: nil, options: [])
+            
+            // filter the directory contents
+            filePaths = directoryContents.filter{ $0.pathExtension == "mp3" }
+            
+            //get the file names, without the extensions
+            audioFileNames = filePaths.map{ $0.deletingPathExtension().lastPathComponent }
+        } catch {
+            print(error.localizedDescription) //output the error
+        }
+        //print(audioFileNames) //for debugging purposes only
+        for loop in 0..<filePaths.count { //Build up the dictionary.
+            theResult[audioFileNames[loop]] = filePaths[loop]
+        }
+        return theResult
+    }
+    
+    
+    //MARK: - View functions
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        audioClips = getAllMP3FileNameURLs() //Load the details of all the audio files
+    }
+    
+}
