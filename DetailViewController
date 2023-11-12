@@ -188,6 +188,13 @@ class DetailsViewController: UIViewController {
                 }
     }
     
+    func stopMusic(_ sender: Any) {
+        if self.audioPlayer?.isPlaying == true { //we can only stop it if it's still playing
+            self.audioPlayer?.stop()
+            self.audioPlayer = nil
+        }
+    }
+    
     func highlightButtonForTone(_ tone: String) {
         // 确定给定音调对应哪个按钮并进行突出显示
         switch tone {
