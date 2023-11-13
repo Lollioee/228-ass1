@@ -1,0 +1,22 @@
+var gameMode: GameMode = .multiplayer
+
+@IBAction func singlePlayerButtonTapped(_ sender: UIButton) {
+        // 根据按钮设置游戏模式
+        gameMode = (sender.tag == 1) ? .singlePlayer : .multiplayer
+        performSegue(withIdentifier: "toSinglePlayer", sender: self)
+    }
+    
+    @IBAction func multiplePlayerButtonTapped(_ sender: UIButton) {
+        // 根据按钮设置游戏模式
+        gameMode = (sender.tag == 2) ? .multiplayer : .singlePlayer
+        performSegue(withIdentifier: "toMutiplePlayer", sender: self)
+    }
+
+
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        if segue.identifier == "toSinglePlayer" || segue.identifier == "toMutiplePlayer" {
+            if let gameVC = segue.destination as? DetailsViewController {
+                gameVC.gameMode = gameMode
+            }
+        }
+    }
