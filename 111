@@ -1,0 +1,18 @@
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        initialize()
+        print(gameMode)
+        // 如果是单人模式，直接选择默认玩家
+        if gameMode == .singlePlayer {
+            currentPlayer = allPlayers.first
+        } else {
+            // 否则弹出选择玩家的弹窗
+        }
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        if gameMode == .multiplayer {
+            showPlayerSelection()
+        }
+    }
