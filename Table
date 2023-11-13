@@ -1,0 +1,41 @@
+import UIKit
+
+class ViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
+    @IBOutlet var tableView: UITableView!
+
+    var players: [(name: String, highScore: Int, highScoreDate: Date)] = [
+        ("Player1", 150, Date()),
+        ("Player2", 200, Date()),
+        // 添加更多玩家...
+    ]
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        tableView.dataSource = self
+        tableView.delegate = self
+    }
+
+    // MARK: - UITableViewDataSource
+
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return players.count
+    }
+
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "playerCell", for: indexPath)
+
+        let player = players[indexPath.row]
+        cell.textLabel?.text = player.name
+        cell.detailTextLabel?.text = "High Score: \(player.highScore) (\(formatDate(player.highScoreDate)))"
+
+        return cell
+    }
+
+    // Helper method to format Date as String
+    private func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .short
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
+    }
+}
