@@ -1,0 +1,406 @@
+import UIKit
+import AVFoundation
+
+class DetailsViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSource {
+
+    @IBOutlet weak var redButton: UIButton!
+    @IBOutlet weak var blueButton: UIButton!
+    @IBOutlet weak var greenButton: UIButton!
+    @IBOutlet weak var yellowButton: UIButton!
+    @IBOutlet weak var startButton: UIButton!
+    @IBOutlet weak var exitButton: UILabel!
+    @IBOutlet weak var scoreLabel: UILabel!
+    @IBOutlet weak var countdownLabel: UILabel!
+    @IBOutlet weak var tonesAndRound: UILabel!
+    @IBOutlet weak var playerPickerView: UIPickerView!
+    
+    var playerSequence: [String] = []
+    var colorSequence: [String] = [] // 存储生成的颜色序列
+    var audioClips = [String:URL]()
+    var audioPlayer: AVAudioPlayer?
+    var highestscore: Int = 0
+    var score: Int = 0
+    var highestScoreTime: Date = Date()
+    var countdownTimer: Timer?
+    var secondsRemaining = 0
+    var numberofRound = 1
+    var initialLength = 2
+    var isGameEnded = false
+    // 生成新序列并播放它
+
+    var allPlayers: [(name: String, highScore: Int, highScoreDate: Date)] = [
+        ("Player1", 0, Date()),
+        ("Player2", 0, Date()),
+        ("Player3", 0, Date()),
+        ("Player4", 0, Date()),
+        ("Player5", 0, Date()),
+    ]
+
+    var currentPlayer: (name: String, highScore: Int, highScoreDate: Date)?
+    var gameMode: ChoosePlayerViewController.GameMode = .multiplayer
+
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        initialize()
+
+        // 设置 pickerView 的代理和数据源
+        playerPickerView.delegate = self
+        playerPickerView.dataSource = self
+
+        // 如果是单人模式，直接选择默认玩家
+        if gameMode == .singlePlayer {
+            currentPlayer = allPlayers.first
+        } else {
+            // 否则弹出选择玩家的弹窗
+            showPlayerSelection()
+        }
+    }
+
+    // 弹出选择玩家的窗口
+    func showPlayerSelection() {
+        // 如果是多人模式才弹出选择玩家的弹窗
+        guard gameMode == .multiplayer else {
+            return
+        }
+
+        let alert = UIAlertController(title: "Select Player", message: "\n\n\n\n\n\n", preferredStyle: .alert)
+
+        // 添加 pickerView 到 alertController
+        alert.view.addSubview(playerPickerView)
+
+        // "OK" 按钮
+        alert.addAction(UIAlertAction(title: "OK", style: .default) { _ in
+            let selectedRow = self.playerPickerView.selectedRow(inComponent: 0)
+            // 处理选择的玩家逻辑
+            self.currentPlayer = self.allPlayers[selectedRow]
+
+            alert.dismiss(animated: true) {
+            // 在弹窗关闭后执行游戏逻辑
+               start()
+            }
+        })
+
+        // 显示弹窗
+        present(alert, animated: true, completion: nil)
+    }
+
+    // UIPickerView 数据源方法
+    func numberOfComponents(in pickerView: UIPickerView) -> Int {
+        return 1
+    }
+
+    func pickerView(_ pickerView: UIPickerView, numberOfRowsInComponent component: Int) -> Int {
+        return allPlayers.count
+    }
+
+    // UIPickerView 代理方法
+    func pickerView(_ pickerView: UIPickerView, titleForRow row: Int, forComponent component: Int) -> String? {
+        return allPlayers[row].name
+    }
+
+    
+    func initialize() {
+        tonesAndRound.isHidden = true
+        scoreLabel.isHidden = true
+        countdownLabel.isHidden = true
+        redButton.isEnabled = false
+        blueButton.isEnabled = false
+        greenButton.isEnabled = false
+        yellowButton.isEnabled = false
+        audioClips = getAllMP3FileNameURLs()
+    }    
+    
+    func start() {
+        tonesAndRound.isHidden = false
+        scoreLabel.isHidden = false
+        countdownLabel.isHidden = false
+        isGameEnded = true
+        generateNewSequence()
+        startButton.isEnabled = false
+    }
+    
+    func generateNewSequence() {
+        // 生成随机的颜色名称序列
+        let Step = (numberofRound - 1) * 5
+        let FinalLength = initialLength + Step
+        colorSequence.removeAll()
+        for _ in 1...FinalLength {
+            let randomColor = ["red", "blue", "green", "yellow"].randomElement()!
+            colorSequence.append(randomColor)
+        }
+        tonesAndRound.text = "Round \(numberofRound) : \(FinalLength) tones"
+        scoreLabel.text = "Score：\(score)"
+        countdownLabel.text = "\(secondsRemaining) seconds remaining"
+        // 播放序列
+        print(colorSequence)
+        playSequence(tonesToPlay: 1, toneLength: FinalLength)
+    }
+    
+    func playSequence(tonesToPlay: Int, toneLength: Int) {
+        secondsRemaining = (tonesToPlay + 1) * 2
+        let index = 0
+        if tonesToPlay <= self.colorSequence.count && isGameEnded {
+        playToneInDelay(index: index, tonesToPlay: tonesToPlay)
+        
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(tonesToPlay)){ [self] in
+                startCountdown()
+            }
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(tonesToPlay) + .seconds(secondsRemaining)) { [self] in
+                
+                if playerSequence == Array(colorSequence.prefix(playerSequence.count)) && !playerSequence.isEmpty {
+                    
+                    if playerSequence.count != colorSequence.count{
+                        playSequence(tonesToPlay: tonesToPlay + 1, toneLength: toneLength)
+                        playerSequence.removeAll()
+                    }
+                    // 继续播放或进入下一轮
+                    if playerSequence.count == colorSequence.count {
+                        // 玩家成功重复了序列
+                        numberofRound += 1
+                        score = toneLength
+                        scoreLabel.text = "Score：\(score)"
+                        if score > highestscore{
+                            highestscore = score
+                            highestScoreTime = Date()
+                        }
+                        playerSequence.removeAll()
+                        generateNewSequence()
+                    }
+                } else {
+                    // 玩家犯了一个错误
+                    gameOver()
+                }
+
+            }
+        }
+    }
+    
+    func playToneInDelay(index: Int, tonesToPlay: Int) {
+        
+        if index < tonesToPlay && isGameEnded {
+            let tone = colorSequence[index]
+            print(index, tonesToPlay)
+            playTone(tone)
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0){
+                self.playToneInDelay(index: index + 1, tonesToPlay: tonesToPlay)
+            }
+        }
+    }
+    
+    func startCountdown() {
+        // 启动倒计时
+        redButton.isEnabled = true
+        blueButton.isEnabled = true
+        greenButton.isEnabled = true
+        yellowButton.isEnabled = true
+        countdownTimer = Timer.scheduledTimer(timeInterval: 1.0, target: self, selector: #selector(updateCountdown), userInfo: nil, repeats: true)
+    }
+    
+    @objc func updateCountdown() {
+        // 更新倒计时标签
+        secondsRemaining -= 1
+        countdownLabel.text = "\(secondsRemaining) seconds remaining"
+        
+        // 检查是否倒计时结束
+        if secondsRemaining <= 0 {
+            endCountdown()
+        }
+    }
+    
+    func endCountdown() {
+        // 结束倒计时
+        redButton.isEnabled = false
+        blueButton.isEnabled = false
+        greenButton.isEnabled = false
+        yellowButton.isEnabled = false
+        countdownTimer?.invalidate()
+        
+        // 重置倒计时秒数
+    }
+
+    
+    func getAllMP3FileNameURLs() -> [String:URL] {
+        var filePaths = [URL]() //URL array
+        var audioFileNames = [String]() //String array
+        var theResult = [String:URL]()
+
+        let bundlePath = Bundle.main.bundleURL
+        do {
+            try FileManager.default.createDirectory(atPath: bundlePath.relativePath, withIntermediateDirectories: true)
+            // Get the directory contents urls (including subfolders urls)
+            let directoryContents = try FileManager.default.contentsOfDirectory(at: bundlePath, includingPropertiesForKeys: nil, options: [])
+            
+            // filter the directory contents
+            filePaths = directoryContents.filter{ $0.pathExtension == "mp3" }
+            
+            //get the file names, without the extensions
+            audioFileNames = filePaths.map{ $0.deletingPathExtension().lastPathComponent }
+        } catch {
+            print(error.localizedDescription) //output the error
+        }
+        //print(audioFileNames) //for debugging purposes only
+        for loop in 0..<filePaths.count { //Build up the dictionary.
+            theResult[audioFileNames[loop]] = filePaths[loop]
+        }
+        return theResult
+    }
+    
+    func setupAudioPlayer(toPlay audioFileURL:URL) {
+        do {
+            try self.audioPlayer = AVAudioPlayer(contentsOf: audioFileURL)
+            audioPlayer?.prepareToPlay()
+        } catch {
+            print("Can't play the audio \(audioFileURL.absoluteString)")
+            print(error.localizedDescription)
+        }
+    }
+
+    func playTone(_ tone: String) {
+                if (self.audioPlayer == nil) || (self.audioPlayer?.isPlaying == false) {
+                    //select a random audio clip URL from those in the audioClips dictionary
+                    if let randomClipURL = audioClips[tone]{
+                        highlightButtonForTone(tone)
+                        setupAudioPlayer(toPlay: randomClipURL) //prepare it for playing
+                        self.audioPlayer?.play()
+                        Timer.scheduledTimer(withTimeInterval: audioPlayer!.duration, repeats: false) { _ in
+                            self.unhighlightButtonsForTone(tone)
+                        }
+                    }else{
+                        print("cannot find the URL")
+                    }
+                }
+    }
+    
+    func highlightButtonForTone(_ tone: String) {
+        // 确定给定音调对应哪个按钮并进行突出显示
+        switch tone {
+            case "red":
+                highlightButton(redButton)
+            case "blue":
+                highlightButton(blueButton)
+            case "green":
+                highlightButton(greenButton)
+            case "yellow":
+                highlightButton(yellowButton)
+            default:
+                break
+        }
+    }
+
+    func highlightButton(_ button: UIButton) {
+        // 添加视觉效果以突出显示按钮（您可以根据需要自定义）
+        button.layer.backgroundColor = UIColor.gray.cgColor // 更改为适当的颜色
+        // 您还可以播放声音或执行其他操作以指示按钮已被突出显示
+    }
+    
+    func unhighlightButtonsForTone(_ tone: String) {
+        // Reset all buttons to their default appearance
+        switch tone {
+            case "red":
+                redButton.layer.backgroundColor = UIColor.systemRed.cgColor
+            case "blue":
+                blueButton.layer.backgroundColor = UIColor.systemBlue.cgColor
+            case "green":
+                greenButton.layer.backgroundColor = UIColor.systemGreen.cgColor
+            case "yellow":
+                yellowButton.layer.backgroundColor = UIColor.systemYellow.cgColor
+            default:
+                break
+        }
+    }
+    
+    @IBAction func buttonPressed(_ sender: UIButton) {
+        let colorName = getColorNameFromButton(sender)
+        playerSequence.append(colorName)
+        print(playerSequence)
+        highlightButtonForTone(colorName)
+    }
+    
+    @IBAction func buttonReleased(_ sender: UIButton) {
+        let colorName = getColorNameFromButton(sender)
+        unhighlightButtonsForTone(colorName)
+    }
+
+    func getColorNameFromButton(_ button: UIButton) -> String {
+        switch button {
+        case redButton:
+            return "red"
+        case blueButton:
+            return "blue"
+        case greenButton:
+            return "green"
+        case yellowButton:
+            return "yellow"
+        default:
+            return ""
+        }
+    }
+    
+    func storeResult() {
+        currentPlayer.highScore = highestscore
+        currentPlayer.highScoreDate = highestScoreTime
+    }
+
+    func resetGame() {
+        numberofRound = 1
+        score = 0
+        playerSequence.removeAll()
+        tonesAndRound.isHidden = true
+        scoreLabel.isHidden = true
+        countdownLabel.isHidden = true
+        redButton.isEnabled = false
+        blueButton.isEnabled = false
+        greenButton.isEnabled = false
+        yellowButton.isEnabled = false
+        if self.audioPlayer?.isPlaying == true { //we can only stop it if it's still playing
+            self.audioPlayer?.stop()
+            self.audioPlayer = nil
+        }
+        isGameEnded = false
+        countdownTimer?.invalidate()
+        countdownTimer = nil
+    }
+
+    @IBAction func exitButton(_ sender: UIButton) {
+        resetGame()
+    }
+    
+// 处理游戏结束
+func gameOver() {
+    // 显示最终分数并将其与日期一起存储在高分榜中
+    // 实现一个高分榜或将分数保存到UserDefaults中
+    
+    // 重置游戏
+    storeResult()
+    let alertController = UIAlertController(title: "Game Over", message: generateGameSummary(), preferredStyle: .alert)
+    
+    alertController.addAction(UIAlertAction(title: "Restart", style: .default){ _ in
+        self.start()
+    })
+    alertController.addAction(UIAlertAction(title: "Select Player", style: .default) { _ in
+        // 在这里添加选择玩家的逻辑
+        self.showPlayerSelection()
+    })
+    present(alertController, animated: true, completion: nil)
+    resetGame()
+}
+
+    private func generateGameSummary() -> String {
+        if if gameMode == .singlePlayer {
+            // 返回单人游戏的总结信息
+            return "Your Score: \(currentPlayer?.highScore ?? 0)\nTime: \(formatDate(currentPlayer?.highScoreDate ?? Date()))"
+        } else {
+            // 返回多人游戏的总结信息
+            var summary = "Game Summary:\n"
+            for player in allPlayers {
+                summary += "\(player.name)\nCurrent Score: \(player.highScore)\nHigh Score: \(player.highScore)\nTime: \(formatDate(player.highScoreDate))\n\n"
+            }
+            return summary
+        }
+    }
+    
+}
