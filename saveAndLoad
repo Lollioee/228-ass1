@@ -1,4 +1,11 @@
-    func loadPlayerData() {
+struct PlayerData: Codable {
+    let name: String
+    let highScore: Int
+    let highScoreDate: Date
+}
+
+
+func loadPlayerData() {
         if let savedData = UserDefaults.standard.data(forKey: "playerData") {
             let decoder = JSONDecoder()
             if let loadedData = try? decoder.decode([(String, Int, Date)].self, from: savedData) {
