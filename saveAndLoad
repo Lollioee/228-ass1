@@ -1,0 +1,16 @@
+    func loadPlayerData() {
+        if let savedData = UserDefaults.standard.data(forKey: "playerData") {
+            let decoder = JSONDecoder()
+            if let loadedData = try? decoder.decode([(String, Int, Date)].self, from: savedData) {
+                allPlayers = loadedData
+            }
+        }
+    }
+
+    // Function to save player data to UserDefaults
+    func savePlayerData() {
+        let encoder = JSONEncoder()
+        if let encoded = try? encoder.encode(allPlayers) {
+            UserDefaults.standard.set(encoded, forKey: "playerData")
+        }
+    }
