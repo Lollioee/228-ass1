@@ -1,0 +1,47 @@
+//  Created by Chen, Gaopeng on 24/10/2023.
+//
+
+import UIKit
+
+class ViewController: UIViewController {
+
+    @IBOutlet weak var singlePlayerButton: UIButton!
+    @IBOutlet weak var multiplayerButton: UIButton!
+    
+    var gameMode: GameMode = .multiplayer
+
+    enum GameMode {
+        case singlePlayer
+        case multiplayer
+    }
+
+
+    @IBAction func startGameButtonTapped(_ sender: UIButton) {
+        // 根据按钮设置游戏模式
+        gameMode = (sender.tag == 1) ? .singlePlayer : .multiplayer
+        performSegue(withIdentifier: "segueToGame", sender: self)
+        }
+    }
+
+
+override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+    if segue.identifier == "segueToGame" {
+        if let gameVC = segue.destination as? GameViewController {
+            gameVC.gameMode = (sender.tag == 1) ? .singlePlayer : .multiplayer
+        }
+    }
+}
+
+
+    @IBAction func unwindToDetailsViewController(_ unwindSegue: UIStoryboardSegue) {
+        let sourceViewController = unwindSegue.source
+        // Use data from the view controller which initiated the unwind segue
+    }
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        // Do any additional setup after loading the view.
+    }
+
+
+}
